@@ -1,0 +1,6 @@
+framework module Pods_ListOfTask {
+  umbrella header "Pods-ListOfTask-umbrella.h"
+
+  export *
+  module * { export * }
+}
