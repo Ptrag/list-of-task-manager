@@ -1,16 +1,9 @@
-//
-//  CategoryViewController.swift
-//  ListOfTask
-//
-//  Created by Pj on 12/08/2018.
-//  Copyright © 2018 Pj. All rights reserved.
-//
-
 import UIKit
-import CoreData
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+
+class CategoryViewController: SwipeTableViewController {
     
     let realm = try! Realm()
     
@@ -20,9 +13,9 @@ class CategoryViewController: UITableViewController {
         super.viewDidLoad()
         
         loadCategories()
+        tableView.separatorStyle = .none
 
     }
-    
     
     //TableView DataSource methods
     
@@ -31,9 +24,17 @@ class CategoryViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
         
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "no categories added yet"
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        
+        if let category = categories?[indexPath.row] {
+            cell.textLabel?.text = category.name ?? "no categories added yet"
+            
+            guard let categoryColor = UIColor(hexString: category.colour) else {fatalError()}
+            
+            cell.backgroundColor = categoryColor
+            cell.textLabel?.textColor = ContrastColorOf(categoryColor, returnFlat: true)
+        }
         
         return cell
     }
@@ -54,8 +55,6 @@ class CategoryViewController: UITableViewController {
         
     }
     
-    
-    
     //Data Manipulation Metohds
     
     func save(category : Category) {
@@ -67,24 +66,33 @@ class CategoryViewController: UITableViewController {
         }catch{
             print("Error savngn category \(error)")
         }
-        
         tableView.reloadData()
-        
         
     }
     
     func loadCategories(){
         
         categories = realm.objects(Category.self)
-
-        
+  
         tableView.reloadData()
         
     }
     
+    //delete data from swipe
+    override func updateModel(at indexPath: IndexPath) {
+        if let categoryFroDeletion = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(categoryFroDeletion)
+                }
+            }catch {
+                print("error during deletion \(error)")
+            }
+        }
+    }
+    
     //Add new Categories
 
-   
     @IBAction func addBtnPressed(_ sender: UIBarButtonItem) {
         
         var textFiled = UITextField()
@@ -95,6 +103,7 @@ class CategoryViewController: UITableViewController {
             
             let newCategory = Category()
             newCategory.name = textFiled.text!
+            newCategory.colour = UIColor.randomFlat.hexValue()
             self.save(category: newCategory)
             
         }
@@ -104,9 +113,7 @@ class CategoryViewController: UITableViewController {
             textFiled = filed
             textFiled.placeholder = "Add a new category"
         }
-        
         present(alert,animated: true,completion: nil)
         
     }
-
 }
